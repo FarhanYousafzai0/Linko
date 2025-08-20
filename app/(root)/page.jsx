@@ -38,7 +38,7 @@ const Page = () => {
 
 
   const deleteUser = async (id) => {
-    await fetch(`/api/users/${id}`, { method: "DELETE" }) // fixed `/`
+    await fetch(`/api/users/${id}`, { method: "DELETE" }) 
     getUsers()
   }
 
