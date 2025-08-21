@@ -1,41 +1,50 @@
 import { connectDB } from "@/app/lib/mongodb";
 import User from "@/app/Models/User";
 import bcrypt from "bcryptjs";
-import jwt  from "jsonwebtoken";
-
+import jwt from "jsonwebtoken";
 
 export async function POST(req) {
-
-try {
-    const {email,passoword} = req.json();
-
+  try {
     await connectDB();
 
-    // Find the email ,if it correct or not:
-    const findUser = await User.findOne({email});
-    if(!findUser){
-        return new Response(JSON.stringify({error:"Invalid email or Password"}),{status:400})
+    const { email, password } = await req.json();
+
+    // Find user by email
+    const findUser = await User.findOne({ email });
+    if (!findUser) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email or password" }),
+        { status: 400 }
+      );
     }
 
-    // Check Password in the database :
-
-    const IsPasswordCorrect = await bcrypt.compare(passoword,findUser.passoword);
-    if(!IsPasswordCorrect){
-        return new Response(JSON.stringify({error:"Invalid password or email"}),{status:400});
+    // Compare password
+    const isPasswordCorrect = await bcrypt.compare(password, findUser.password);
+    if (!isPasswordCorrect) {
+      return new Response(
+        JSON.stringify({ error: "Invalid email or password" }),
+        { status: 400 }
+      );
     }
 
-
+    // Generate JWT token
     const token = jwt.sign(
-        {id:findUser?._id ,email:findUser?.email},
-        process.env.JWT_SEC,
-        {expiresIn:'1d'}
-    )
+      { id: findUser._id, email: findUser.email },
+      process.env.JWT_SEC,
+      { expiresIn: "1d" }
+    );
 
-    return new Response(JSON.stringify({message:"Login Successfully"},token),{status:200})
-
-    
-} catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-
-}    
+    return new Response(
+      JSON.stringify({
+        message: "Login successful",
+        token,
+        user: { id: findUser._id, email: findUser.email, name: findUser.name },
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+    });
+  }
 }
